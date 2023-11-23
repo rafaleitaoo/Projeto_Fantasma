@@ -32,6 +32,9 @@ p_load(lubridate)
 
 
 
+
+# Baixando o banco e tirando as duplicatas
+
 vendas <- "C:\\Users\\Lisandre\\Desktop\\ESTAT\\Projeto_Fantasma\\banco\\vendas.csv" %>%read.csv()
 vendas_limpo <- vendas %>%
   distinct(Unique.ID, .keep_all = TRUE)
@@ -41,6 +44,10 @@ vendas_limpo <- vendas_limpo %>%
 devolucao<- "C:\\Users\\Lisandre\\Desktop\\ESTAT\\Projeto_Fantasma\\banco\\devolução_atualizado.csv" %>%read.csv()
 dev_limpo <- devolucao %>%
   distinct(Unique.ID, .keep_all = TRUE)
+
+
+
+
 
 
 
@@ -63,10 +70,11 @@ cpmlimpo$Data.Venda <- as.Date(cpmlimpo$Data.Venda, format = "%m/%d/%Y")
 cpmlimpo$Mes <- month(cpmlimpo$Data.Venda)
 vendas_agrupadas <- cpmlimpo %>%
   group_by(Mes, Categoria) %>%
-  summarise(Media_Preco = mean(Price))
+  summarise(total_Preco = sum(Price))
+
 
 ggplot(vendas_agrupadas) +
-  aes(x = Mes, y = Media_Preco, group = Categoria, colour = Categoria) +
+  aes(x = Mes, y = total_Preco, group = Categoria, colour = Categoria) +
   geom_line(size = 1) +
   geom_point(size = 2) +
   scale_colour_manual(name = "Categoria", labels = ) +
@@ -74,7 +82,11 @@ ggplot(vendas_agrupadas) +
   scale_x_continuous(breaks = 1:12, labels = c("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")) +
   theme_estat()
 
-ggsave("analise1.3_grupo.pdf", width = 158, height = 93, units = "mm")
+ggsave("analise1_grupo.pdf", width = 158, height = 93, units = "mm")
+
+
+
+
 
 
 
@@ -91,7 +103,7 @@ ggplot(marcaslimpas) +
   ) +
   labs(x = "Marca", y = "Preço") +
   theme_estat()
-ggsave("analise2.1.pdf", width = 158, height = 93, units = "mm")
+ggsave("analise2.pdf", width = 158, height = 93, units = "mm")
 
 
 quadro_resumo <- marcaslimpas %>%
@@ -114,6 +126,8 @@ quadro_resumo <- marcaslimpas %>%
  
 
 
+ 
+ 
 
 
 
@@ -162,24 +176,38 @@ ggsave("analise3.pdf", width = 158, height = 93, units = "mm")
 
 
 
+
+
+
+
+
 # Análise 4 Relação de Preço e Avaliação
 
 ggplot(vendas_limpo) +
   aes(x = Price, y = Rating) +
-  geom_jitter(colour = "#A11D21", size = 3) +
+  geom_jitter(colour = "#A11D21", size = 3, alpha = 0.3) +
   labs(
     x = "Preço",
     y = "Avaliação"
-  ) +  
+  ) +
   theme_estat()
 
 ggsave("analise4.pdf", width = 158, height = 93, units = "mm")
 
+# correlação de pearson
+rplimpo <- vendas_limpo%>%
+  filter(!is.na(Price) & !is.na(Rating))
+
+correlacao <- cor(rplimpo$Price, rplimpo$Rating)
+view(correlacao)
+
+# quadro
 novo_av <- vendas_limpo %>%
   mutate(Rating = round(Rating))
   
 novo_av <- novo_av[!is.na(novo_av$Rating), ]
 
+# quadro em relação a avaliação
 quadro_r <- vendas_limpo %>%
   summarize(Média = round(mean(Rating, na.rm = TRUE), 2),
             `Desvio Padrão` = round(sd(Rating, na.rm = TRUE), 2),
@@ -195,6 +223,8 @@ quadro_r <- vendas_limpo %>%
 
 xtable::xtable(quadro_r)
 
+
+ # quadro em relação ao preço
 quadro_p <- vendas_limpo %>%
   summarize(Média = round(mean(Price, na.rm = TRUE), 2),
             `Desvio Padrão` = round(sd(Price, na.rm = TRUE), 2),
@@ -208,6 +238,12 @@ quadro_p <- vendas_limpo %>%
   as.data.frame() %>%
   mutate(V1 = str_replace(V1, "\\.", ","))
 xtable::xtable(quadro_p)
+
+
+
+
+
+
 
 # Análise 5 frequencia de cada tipo de devolução por marca
 
@@ -247,7 +283,11 @@ ggplot(grafico) +
   coord_flip() +
   theme_estat()
 
-ggsave("analise52.pdf", width = 158, height = 93, units = "mm")
+ggsave("analise5.pdf", width = 158, height = 93, units = "mm")
+
+
+
+
 
 
 # Análise 6 média de avaliação por marca
